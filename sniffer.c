@@ -1,26 +1,9 @@
-#include <sys/socket.h>
-#include <error.h>
-#include <netinet/in.h>
-#include <netinet/if_ether.h>
-#include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
-#include <netinet/udp.h>
-#include <netinet/tcp.h>
-
-#include <arpa/inet.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "sniffer.h"
 
 #define DEVICE_NAME "ens33" 
 
 struct sockaddr_in src, dst;
 struct ifreq ifr;
-
-void handlePacket(unsigned char *, int);
 
 int main(int argc, char * argv[])
 {
@@ -82,7 +65,81 @@ int main(int argc, char * argv[])
 
 void handlePacket(unsigned char * buffer, int size)
 {
-    struct iphdr * ip = (struct iphdr *)(buffer + sizeof(struct ethhdr));
+    struct ether_header * eth = (struct ether_header *)buffer;
+    handleEthHdr(eth);
 
-    printf("%d", ip->protocol);
+    void * netHdr = (void*)eth + sizeof(struct ether_header);
+    if (ntohs(eth->ether_type) == ETH_P_IP)
+    {
+        struct ip * ip = (struct ip *)(buffer + sizeof(struct ether_header));
+        handleIpHdr(ip);
+        void * transHdr = (void*)ip + sizeof(struct iphdr);
+
+        switch (ip->ip_p) 
+        {
+            case IPPROTO_ICMP:
+                handleIcmpHdr((struct icmphdr *)transHdr);
+                break;
+            case IPPROTO_TCP:
+                handleTcpHdr((struct tcphdr *)transHdr);
+                break;
+            case IPPROTO_UDP:
+                handleUdpHdr((struct udphdr *)transHdr);
+                break;
+            default:
+                break;
+        }
+
+    }
+    else if (ntohs(eth->ether_type) == ETH_P_ARP)
+    {
+        handleArpHdr((struct arphdr *)netHdr);
+    }
+    else if (ntohs(eth->ether_type) == ETH_P_RARP)
+    {
+
+    }
+
+
+
+}
+
+void handleEthHdr(struct ether_header * eth)
+{
+    printf("%s --> %s\t", ether_ntoa((const struct ether_addr *)&eth->ether_shost), ether_ntoa((const struct ether_addr *)&eth->ether_dhost)); 
+    switch(ntohs(eth->ether_type))
+    {
+        case ETH_P_IP:
+            printf("[IP]\n");
+            break;
+        case ETH_P_ARP:
+            printf("[ARP]\n");
+            break;
+        case ETH_P_RARP:
+            printf("[RARP]\n");
+            break;
+        default:
+            printf("\n");
+            break;
+    }
+}
+
+void handleIpHdr(struct ip * ip)
+{
+    printf("%s => %s\n", inet_ntoa(ip->ip_src), inet_ntoa(ip->ip_dst));
+}
+
+void handleIcmpHdr(struct icmphdr * icmp)
+{
+
+}
+
+void handleTcpHdr(struct tcphdr * tcp)
+{
+
+}
+
+void handleUdpHdr(struct udphdr * udp)
+{
+
 }
