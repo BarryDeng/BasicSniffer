@@ -11,16 +11,20 @@
 
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
+#include <sys/signal.h>
+#include <netdb.h>
 #include <net/if.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
+#include <ctype.h>
 
 void handlePacket(unsigned char *, int);
 void handleEthHdr(struct ether_header *);
 void handleIpHdr(struct ip *);
-void handleIcmpHdr(struct icmphdr *);
+void handleIcmpHdr(struct icmp *);
 void handleTcpHdr(struct tcphdr *);
 void handleUdpHdr(struct udphdr *);
 void handleArpHdr(struct arphdr *);
