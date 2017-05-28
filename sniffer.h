@@ -23,8 +23,8 @@
 
 void handlePacket(unsigned char *, int);
 void handleEthHdr(struct ether_header *);
+void handleArpHdr(struct ether_arp *);
 void handleIpHdr(struct ip *);
 void handleIcmpHdr(struct icmp *);
 void handleTcpHdr(struct tcphdr *);
 void handleUdpHdr(struct udphdr *);
-void handleArpHdr(struct arphdr *);

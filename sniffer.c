@@ -188,11 +188,7 @@ void handlePacket(unsigned char * buffer, int size)
     }
     else if (ntohs(eth->ether_type) == ETH_P_ARP)
     {
-        /*handleArpHdr((struct arphdr *)netHdr);*/
-    }
-    else if (ntohs(eth->ether_type) == ETH_P_RARP)
-    {
-
+        handleArpHdr((struct ether_arp *)netHdr);
     }
 
     dumpIntoFile(file, buffer, size);
@@ -210,12 +206,23 @@ void handleEthHdr(struct ether_header * eth)
         case ETH_P_ARP:
             printf("[ARP]\n");
             break;
-        case ETH_P_RARP:
-            printf("[RARP]\n");
-            break;
         default:
             printf("\n");
             break;
+    }
+}
+
+void handleArpHdr(struct ether_arp * arp)
+{
+    if (ntohs(arp->ea_hdr.ar_op) == ARPOP_REQUEST) 
+    {
+        printf("Who has %s?", inet_ntoa(*(struct in_addr *)arp->arp_tpa));
+        printf(" Tell %s(%s)\n", inet_ntoa(*(struct in_addr *)arp->arp_spa), ether_ntoa((const struct ether_addr *)&arp->arp_sha));
+    }
+    else if (ntohs(arp->ea_hdr.ar_op) == ARPOP_REPLY)
+    {
+        printf("%s(%s),", inet_ntoa(*(struct in_addr *)arp->arp_tpa), ether_ntoa((const struct ether_addr *)&arp->arp_tha));
+        printf(" %s is at %s\n", inet_ntoa(*(struct in_addr *)arp->arp_spa), ether_ntoa((const struct ether_addr *)&arp->arp_sha));
     }
 }
 
